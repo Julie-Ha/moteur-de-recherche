@@ -5,6 +5,7 @@ import csv
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import collections
+import jsonpickle
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -17,16 +18,18 @@ def index():
 def cosineSimilarity():
     entities = request.json['entities']
     entities = searchSubEntity(entities)
-
     wordnetTypes = getWordnetType(entities)
-
     wordnetVector = createQueryVector(wordnetTypes)
 
-
     similarities = getCosSimilarity(wordnetVector)
-    similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+    similarities = {k: v for k, v in sorted(similarities.items(), key=lambda item: item[1], reverse=True)}
+    similarities = {k: similarities[k] for k in list(similarities)[:10]}
 
-    return jsonify(similarities[:10])
+    articles = []
+    for key, value in similarities.items():
+        articles.append(Article(key, value))
+
+    return jsonpickle.encode(articles, unpicklable=False)
 
 #Supprime la string devant le . : computer_user.computer_scientist => computer_scientist
 def entitiesFormate(entities):
@@ -100,9 +103,14 @@ def getCosSimilarity(wordnetVector):
         for (k, v) in articles.items():
             cos = cosine_similarity([wordnetVector],[v])
             if cos > 0:
-                results[k] = cos[0][0]
+                results[k] = round(cos[0][0],4)
 
     return results
+
+class Article:
+    def __init__(self, title, score):
+        self.title = title
+        self.score = score
 
 if __name__ == "__main__":
     app.run()

@@ -18,7 +18,11 @@
       <button class="button is-primary m-1">Semantic Content Similarity</button>
       <button class="button is-light m-1">Clear</button>
       <div>
-        {{ results }}
+        <ul>
+          <li v-for="result in results" :key="result.title">
+            {{result.score["py/newargs"][0]}} | {{result.title}}
+          </li> 
+        </ul>
       </div>
     </div>
   </div>
@@ -40,7 +44,7 @@ export default {
     return {
       treeData: treeData,
       checkedEntities: store.state.checkedEntities,
-      results: "results",
+      results: "",
     };
   },
   methods: {
@@ -49,14 +53,13 @@ export default {
       this.addItem(item);
     },
     cosineSimilarity() {
-      let myJSON = JSON.stringify(this.checkedEntities);
-      console.log(myJSON);
       axios
         .post("http://localhost:5000/cosine-similarity", {
-          entities: this.checkedEntities
+          entities: this.checkedEntities,
         })
         .then((response) => {
           this.results = response.data;
+          console.log(this.results);
         })
         .catch((e) => {
           this.errors.push(e);
