@@ -17,11 +17,16 @@
       <button class="button is-primary m-1">Path Length</button>
       <button class="button is-primary m-1">Semantic Content Similarity</button>
       <button class="button is-light m-1">Clear</button>
-      <div>
+      <div class="m-1">
         <ul>
-          <li v-for="result in results" :key="result.title">
-            {{result.score["py/newargs"][0]}} | {{result.title}}
-          </li> 
+          <li v-for="result in results" :key="result.title" class="my-2 flex is-align-items-center">
+            <span class="tag is-primary" style="width: 50px;"
+              >{{ result.score["py/newargs"][0] }}
+            </span>
+            <span>
+            {{ result.title }}
+            </span>
+          </li>
         </ul>
       </div>
     </div>
@@ -59,7 +64,6 @@ export default {
         })
         .then((response) => {
           this.results = response.data;
-          console.log(this.results);
         })
         .catch((e) => {
           this.errors.push(e);

@@ -95,15 +95,15 @@ def createQueryVector(wordnet):
                 
     return vector
 
-#Calcule la cosine similarity entre le QueryVector et chaque article
-def getCosSimilarity(wordnetVector):
+#Calcule la cosine similarity entre le queryVector et le vector chaque article
+def getCosSimilarity(queryVector):
     results = dict()
     with open('article_vector.json') as article_vector:
         articles = json.load(article_vector)
         for (k, v) in articles.items():
-            cos = cosine_similarity([wordnetVector],[v])
+            cos = cosine_similarity([queryVector],[v])
             if cos > 0:
-                results[k] = round(cos[0][0],4)
+                results[k] = round(cos[0][0], 4)
 
     return results
 
