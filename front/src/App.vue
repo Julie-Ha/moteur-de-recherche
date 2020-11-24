@@ -14,14 +14,14 @@
       <button class="button is-primary m-1" @click="cosineSimilarity">
         Cosine Similarity
       </button>
-      <button class="button is-primary m-1">Path Length</button>
+      <button class="button is-primary m-1" @click="pathLength">Path Length</button>
       <button class="button is-primary m-1">Semantic Content Similarity</button>
       <button class="button is-light m-1">Clear</button>
       <div class="m-1">
         <ul>
           <li v-for="result in results" :key="result.title" class="my-2 flex is-align-items-center">
             <span class="tag is-primary" style="width: 50px;"
-              >{{ result.score["py/newargs"][0] }}
+              >{{ result.score }}
             </span>
             <span>
             {{ result.title }}
@@ -60,6 +60,18 @@ export default {
     cosineSimilarity() {
       axios
         .post("http://localhost:5000/cosine-similarity", {
+          entities: this.checkedEntities,
+        })
+        .then((response) => {
+          this.results = response.data;
+        })
+        .catch((e) => {
+          this.errors.push(e);
+        });
+    },
+    pathLength() {
+      axios
+        .post("http://localhost:5000/path-length", {
           entities: this.checkedEntities,
         })
         .then((response) => {

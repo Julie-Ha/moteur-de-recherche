@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import collections
 import jsonpickle
+import networkx as nx
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -30,6 +31,21 @@ def cosineSimilarity():
         articles.append(Article(key, value))
 
     return jsonpickle.encode(articles, unpicklable=False)
+
+@app.route('/path-length', methods=['POST'])
+def pathLength():
+    entities = request.json['entities']
+    similarities = calculation(entities)
+    
+    similarities = {k: v for k, v in sorted(similarities.items(), key=lambda item: item[1], reverse=True)}
+    similarities = {k: similarities[k] for k in list(similarities)[:10]}
+
+    articles = []
+    for key, value in similarities.items():
+        articles.append(Article(key, value))
+
+    return jsonpickle.encode(articles, unpicklable=False)
+
 
 #Supprime la string devant le . : computer_user.computer_scientist => computer_scientist
 def entitiesFormate(entities):
@@ -103,7 +119,7 @@ def getCosSimilarity(queryVector):
         for (k, v) in articles.items():
             cos = cosine_similarity([queryVector],[v])
             if cos > 0:
-                results[k] = round(cos[0][0], 4)
+                results[k] = float(round(cos[0][0], 4))
 
     return results
 
@@ -111,6 +127,103 @@ class Article:
     def __init__(self, title, score):
         self.title = title
         self.score = score
+
+class node:
+    
+    def _init_(self,name=None,children=None):
+        self.name = name
+        if children is None:
+            self.children = [] 
+        else:
+            self.children = children
+
+    def getName(self):
+        return self.name
+    def getChildren(self):
+        liste = []
+        for i in self.children:
+            liste.append(i.name)
+        return liste
+    
+#Construction of tree through recursion            
+class implementation:
+    nodes=[]
+    def buildnode(self,ob):
+        
+        node1= node()
+        node1.name= ob['name']
+        node1.children=[]
+        if "children" in ob:
+            for children in ob['children']:
+                node1.children.append(self.buildnode(children))
+
+        self.nodes.append(node1)
+        return node1
+    def getNodes(self):
+        return self.nodes
+    
+
+def createGraph(nodes):
+    G = nx.Graph()
+    for i in nodes:
+        G.add_node(i.name)
+    for i in nodes:
+        for j in i.children:
+            G.add_edge(i.name, j.name)
+    return G
+
+##Tuka ne znam dali treba da se dodade 1 mislam deka ne, prashaj go
+##utre profesorot
+def calculatePathLen(path, entity1, entity2):
+    #return nx.shortest_path_length(G, entity1, entity2)+1
+    return path[entity1][entity2]+1
+def calculateSimPath(pathlen):
+    return 1/pathlen
+    
+##queryValue, documentValue
+def calculateHighestValue(path, q, document):
+    highest = 0
+    
+    for i in document:
+        pathlen = calculatePathLen(path, q, i)
+       
+        simpathlen = calculateSimPath(pathlen)
+        if simpathlen > highest:
+            highest = simpathlen
+    return highest
+
+##Moyene des plus grandes valurs
+def calculateMeanValue(path, query, document):
+     liste =[]
+     for q in query: 
+         h = calculateHighestValue(path, q, document)
+        
+         liste.append(h)
+    
+     return (sum(liste) / len(liste))
+        
+
+def calculation(query):
+    f=open("ontology.json")
+    data=json.load(f)
+    builder = implementation()
+    builder.buildnode(data)
+
+    nodes = builder.getNodes()
+
+    G = createGraph(nodes)
+    ##Tous le distance
+    path = dict(nx.all_pairs_shortest_path_length(G))
+    dicto = {}
+    with open('article_typeid.json') as article_vector:
+        articles = json.load(article_vector)
+   
+        for article in articles:
+             score = round(calculateMeanValue(path, query, articles[article]), 4)
+             
+             dicto[article]=score
+
+    return dicto
 
 if __name__ == "__main__":
     app.run()
