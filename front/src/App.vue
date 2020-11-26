@@ -15,7 +15,7 @@
         Cosine Similarity
       </button>
       <button class="button is-primary m-1" @click="pathLength">Path Length</button>
-      <button class="button is-primary m-1">Semantic Content Similarity</button>
+      <button class="button is-primary m-1" @click="semanticContent">Semantic Content Similarity</button>
       <button class="button is-light m-1">Clear</button>
       <div class="m-1">
         <ul>
@@ -72,6 +72,18 @@ export default {
     pathLength() {
       axios
         .post("http://localhost:5000/path-length", {
+          entities: this.checkedEntities,
+        })
+        .then((response) => {
+          this.results = response.data;
+        })
+        .catch((e) => {
+          this.errors.push(e);
+        });
+    },
+    semanticContent() {
+      axios
+        .post("http://localhost:5000/semantic-content", {
           entities: this.checkedEntities,
         })
         .then((response) => {
